@@ -4,22 +4,11 @@ const Product = require("./models/Product");
 const Order = require("./models/Order");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const checkoutNodeJssdk = require("@paypal/checkout-server-sdk"); // Use the same SDK as frontend
 const path = require("path");
-const dotenv = require("dotenv");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
-
-const environment = new checkoutNodeJssdk.core.SandboxEnvironment(
-  process.env.PAYPAL_CLIENT_ID,
-  process.env.PAYPAL_CLIENT_SECRET
-);
-
-function client() {
-  return new checkoutNodeJssdk.core.PayPalHttpClient(environment);
-}
 
 // Middleware
 app.use(cors());
@@ -32,6 +21,8 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
+    console.log("MongoDB connected");
+
     console.log("MongoDB connected");
     insertMockDataIfEmpty(); // Insert mock data if necessary
   })
@@ -48,19 +39,20 @@ const mockProducts = [
     name: "Wireless Headphones",
     price: 50,
     description: "Noise-cancelling wireless headphones",
-    imageUrl: "https://via.placeholder.com/150",
+    imageUrl: "/images/headphones.jpg",
   },
   {
     name: "Smartphone",
     price: 300,
     description: "Latest model with advanced features",
-    imageUrl: "https://via.placeholder.com/150",
+    imageUrl:
+      "/images/smartphone-with-blank-black-screen-innovative-future-technology.jpg",
   },
   {
     name: "Laptop",
     price: 800,
     description: "Powerful laptop for gaming and work",
-    imageUrl: "https://via.placeholder.com/150",
+    imageUrl: "/images/laptop.webp",
   },
 ];
 
@@ -124,6 +116,21 @@ app.get("/api/products/:id", async (req, res) => {
   }
 });
 
+//Search
+app.get("/api/products/search", async (req, res) => {
+  const query = req.query.q;
+
+  try {
+    const products = await Product.find({
+      name: { $regex: query, $options: "i" }, // Case-insensitive search
+    });
+
+    res.json(products);
+  } catch (err) {
+    console.error("Error fetching products:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 // Create a new order
 app.post("/api/orders", async (req, res) => {
   const { productId, quantity, total } = req.body;
@@ -167,6 +174,14 @@ app.get("/api/products/search", async (req, res) => {
 });
 
 // PayPal payment integration
+const paypal = require("paypal-rest-sdk");
+
+paypal.configure({
+  mode: "sandbox", // or 'live'
+  client_id: process.env.PAYPAL_CLIENT_ID,
+  client_secret: process.env.PAYPAL_CLIENT_SECRET,
+});
+
 app.post("/api/pay", (req, res) => {
   const { total, items } = req.body;
 
@@ -193,59 +208,14 @@ app.post("/api/pay", (req, res) => {
     ],
   };
 
-  const request = new checkoutNodeJssdk.orders.OrdersCreateRequest();
-  request.requestBody(create_payment_json);
-
-  client()
-    .execute(request)
-    .then((response) => {
-      if (response.statusCode !== 201) {
-        console.error(response);
-        res.status(500).send(response);
-      } else {
-        res.json(response.result);
-      }
-    });
-});
-
-// Capture payment after user approval
-app.post("/api/capture-payment", async (req, res) => {
-  const { orderID } = req.body;
-
-  if (!orderID) {
-    return res.status(400).json({ error: "Order ID is required" });
-  }
-
-  const request = new checkoutNodeJssdk.orders.OrdersCaptureRequest(orderID);
-  request.requestBody({});
-
-  try {
-    const capture = await client().execute(request);
-    console.log("Capture Response:", capture.result);
-
-    // After successful payment, create a new order in the database
-    const newOrder = new Order({
-      customerName: capture.result.payer.name.given_name, // You can adjust this if needed
-      customerEmail: capture.result.payer.email_address, // Same here, if needed
-      items: capture.result.purchase_units[0].items.map((item) => ({
-        productId: item.sku, // Assuming SKU is product ID
-        quantity: item.quantity,
-        price: item.unit_amount.value,
-      })),
-      totalAmount: capture.result.purchase_units[0].amount.value,
-      status: "Completed", // Set status to Completed after capture
-    });
-
-    await newOrder.save();
-    console.log("New order saved:", newOrder);
-
-    res.json({ message: "Payment Successful", data: capture.result });
-  } catch (error) {
-    console.error("PayPal Capture Error:", error);
-    res
-      .status(500)
-      .json({ error: "Payment capture failed", details: error.message });
-  }
+  paypal.payment.create(create_payment_json, (error, payment) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send(error);
+    } else {
+      res.json(payment);
+    }
+  });
 });
 
 // Serve static frontend files

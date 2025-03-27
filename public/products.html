@@ -10,7 +10,7 @@
   </head>
   <body>
     <header>
-      <h1>My Tech Shop</h1>
+      <h1>MyTech Products</h1>
       <nav>
         <a href="index.html">Home</a>
         <a href="add-product.html">Add Product</a>
@@ -20,12 +20,12 @@
     </header>
 
     <main>
-      <h2>Our Latest Tech Products</h2>
+      <h2>Our Latest Products</h2>
       <div class="product-list" id="product-list"></div>
     </main>
 
     <footer>
-      <p>&copy; 2025 My Tech Shop</p>
+      <p>&copy; 2025 MyTech</p>
     </footer>
 
     <script>
@@ -62,22 +62,9 @@
                   },
                   onApprove: function (data, actions) {
                     return actions.order.capture().then(function (details) {
-                      fetch("http://localhost:5001/api/capture-payment", {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ orderID: data.orderID }),
-                      })
-                        .then((response) => response.json())
-                        .then((result) => {
-                          alert(
-                            `Transaction completed by ${details.payer.name.given_name}`
-                          );
-                        })
-                        .catch((error) => {
-                          console.error("Error capturing payment:", error);
-                        });
+                      alert(
+                        `Transaction completed by ${details.payer.name.given_name}`
+                      );
                     });
                   },
                 })

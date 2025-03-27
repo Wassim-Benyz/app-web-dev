@@ -1,21 +1,29 @@
-fetch("/api/orders")
-  .then((response) => response.json())
-  .then((orders) => {
-    displayOrders(orders);
-  })
-  .catch((error) => {
-    console.error("Error fetching orders:", error);
-  });
+// Sample order data
+const orders = [
+  {
+    id: "order1",
+    items: [
+      { name: "Product A", price: 30 },
+      { name: "Product B", price: 20 },
+    ],
+    total: 50,
+  },
+  {
+    id: "order2",
+    items: [{ name: "Product C", price: 40 }],
+    total: 40,
+  },
+];
 
 // Function to display orders
-function displayOrders(orders) {
+function displayOrders() {
   const orderList = document.getElementById("order-list");
   orderList.innerHTML = ""; // Clear existing orders
   orders.forEach((order) => {
     const orderDiv = document.createElement("div");
     orderDiv.classList.add("order");
     orderDiv.innerHTML = `
-        <h2>Order ID: ${order._id}</h2>
+        <h2>Order ID: ${order.id}</h2>
         <ul>
           ${order.items
             .map((item) => `<li>${item.name} - $${item.price}</li>`)
@@ -46,12 +54,11 @@ function initiatePayment(total, items) {
           .then((data) => data.id);
       },
       onApprove: function (data, actions) {
-        return fetch(`/api/capture-payment`, {
+        return fetch(`/api/pay/${data.orderID}/capture`, {
           method: "post",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ orderID: data.orderID }),
         })
           .then((res) => res.json())
           .then((details) => {
@@ -63,7 +70,7 @@ function initiatePayment(total, items) {
           });
       },
     })
-    .render(`#paypal-button-container`);
+    .render("#paypal-button-container");
 }
 
 // Initialize the order display
