@@ -1,0 +1,20 @@
+version: "3.8"
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./backend:/usr/src/app
+    environment:
+      - MONGODB_URI=mongodb+srv://wassimbenyezzar:Wassim2025@cluster0.b6qexwe.mongodb.net/
+      - PAYPAL_CLIENT_ID=your-client-id
+      - PAYPAL_CLIENT_SECRET=your-client-secret
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/db:/data/db

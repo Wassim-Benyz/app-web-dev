@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Product - My Shop</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Add a New Product</h1>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="products.html">Products</a>
+        <a href="search.html">Search Products</a>
+        <a href="order-history.html">Order History</a>
+      </nav>
+    </header>
+    <main>
+      <form id="add-product-form">
+        <input type="text" id="name" placeholder="Product Name" required />
+        <input type="number" id="price" placeholder="Price" required />
+        <textarea
+          id="description"
+          placeholder="Description"
+          required
+        ></textarea>
+        <button type="submit">Add Product</button>
+      </form>
+    </main>
+    <footer>
+      <p>&copy; 2023 My Shop</p>
+    </footer>
+    <script src="/scripts/add-product.js"></script>
+  </body>
+</html>
